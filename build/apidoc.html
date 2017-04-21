@@ -1,0 +1,193 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/radist2s/gulp-less-sourcemap"
+
+    >gulp-less-sourcemap (v1.4.3)</a>
+</h1>
+<h4>Less for Gulp with source map generation support</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.gulp-less-sourcemap">module gulp-less-sourcemap</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.gulp-less-sourcemap.gulp-less-sourcemap">
+            function <span class="apidocSignatureSpan"></span>gulp-less-sourcemap
+            <span class="apidocSignatureSpan">(options)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.gulp-less-sourcemap" id="apidoc.module.gulp-less-sourcemap">module gulp-less-sourcemap</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.gulp-less-sourcemap.gulp-less-sourcemap" id="apidoc.element.gulp-less-sourcemap.gulp-less-sourcemap">
+        function <span class="apidocSignatureSpan"></span>gulp-less-sourcemap
+        <span class="apidocSignatureSpan">(options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">gulp-less-sourcemap = function (options) {
+
+  function transform (lessFile, enc, next) {
+    var self = this;
+
+    if (lessFile.isNull()) {
+      this.push(lessFile); // pass along
+      return next();
+    }
+
+    if (lessFile.isStream()) {
+      this.emit(&#x27;error&#x27;, new PluginError(&#x27;gulp-less-sourcemap&#x27;, &#x27;Streaming not supported&#x27;));
+      return next();
+    }
+
+    var lessCode = lessFile.contents.toString(&#x27;utf8&#x27;);
+    var sourceMapFileName = gutil.replaceExtension(path.basename(lessFile.path), &#x27;.css.map&#x27;);
+    var opts = options || {};
+
+    // You can pass options as callback who return generated options object
+    // based on dynamic arguments of transform function
+    if (typeof options === &#x27;function&#x27;) {
+      opts = options.apply(this, arguments) || {};
+    }
+
+    // Clone default options
+    opts = defaults({}, opts);
+
+    var sourceMapOpts = {
+      sourceMapURL: sourceMapFileName,
+      sourceMapBasepath: lessFile.base,
+      sourceMapRootpath: &#x27;&#x27;,
+      sourceMapFileInline: false
+    };
+
+    if (opts.sourceMap instanceof Object) {
+      // First defaults sourceMap options and clone sourceMap object(Lodash.defaults doesn&#x27;t recursive cloning)
+      opts.sourceMap = defaults({}, opts.sourceMap, sourceMapOpts);
+    }
+
+    // Mixes in default options
+    opts = defaults(opts, {sourceMap: sourceMapOpts});
+
+    sourceMapOpts = opts.sourceMap;
+
+    var sourceMapFileDir = path.relative(sourceMapOpts.sourceMapBasepath, path.dirname(lessFile.path));
+
+    sourceMapOpts.sourceMapRootpath = path.join(
+      path.relative(path.dirname(lessFile.path), lessFile.base), // Add relative path to less file basedir for sourceMapRootpath
+      sourceMapOpts.sourceMapRootpath
+    );
+
+    // Injects the path of the current file, that file will be passed to LESS
+    opts.filename = lessFile.path;
+
+    less.render(lessCode, opts).then(
+      // Success
+      function (output) {
+        var cssFile = new (gutil.File)({
+          path: gutil.replaceExtension(path.relative(lessFile.base, lessFile.path), &#x27;.css&#x27;),
+          contents: new Buffer(output.css, &#x27;utf8&#x27;)
+        });
+
+        self.push(cssFile);
+
+        if (output.map) {
+          var sourcemapFile = new (gutil.File)({
+            path: path.join(sourceMapFileDir, path.basename(sourceMapOpts.sourceMapURL)),
+            contents: new Buffer(output.map, &#x27;utf8&#x27;)
+          });
+
+          self.push(sourcemapFile);
+        }
+
+        next();
+      },
+      // Error
+      function (err) {
+        // convert the keys so PluginError can read them
+        err.lineNumber = err.line;
+        err.fileName = err.filename;
+
+        // add a better error message
+        err.message = err.message + &#x27; in file &#x27; + err.fileName + &#x27; line no. &#x27; + err.lineNumber;
+
+        self.emit(&#x27;error&#x27;, new PluginError(&#x27;gulp-less-sourcemap&#x27;, err));
+
+        next();
+      }
+    );
+  }
+
+  return through2.obj(transform);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
